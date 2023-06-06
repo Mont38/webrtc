@@ -1,8 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:sdp_transform/sdp_transform.dart';
+import 'package:webrtc_flutter/initial.dart';
+import 'package:webrtc_flutter/routes.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,7 +22,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      // home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      routes: Routes().routes,
+      home: MyHomePage(title: "uwu"),
     );
   }
 }
@@ -50,13 +55,9 @@ class _MyHomePageState extends State<MyHomePage> {
     decoration: InputDecoration(
       labelText: 'codigo offer',
       labelStyle: TextStyle(
-          color: Color.fromRGBO(
-            244,
-            244,
-            244,
-            1,
-          ),
-          fontSize: 13),
+        color: Color.fromRGBO(244, 244, 244, 1),
+        fontSize: 13,
+      ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: BorderSide(
@@ -81,8 +82,27 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      suffixIcon: Container(
+        margin: const EdgeInsets.only(top: 8, right: 8),
+        child: SizedBox(
+          width: 32,
+          height: 32,
+          child: ElevatedButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: _offercontroller.text));
+            },
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.zero,
+              shape: CircleBorder(),
+              primary: const Color.fromARGB(255, 230, 191, 232),
+            ),
+            child: Icon(Icons.copy, size: 16, color: Colors.black),
+          ),
+        ),
+      ),
     ),
   );
+
   final txtremote = TextFormField(
     controller: sdpController,
     maxLines: 4,
@@ -151,6 +171,24 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      suffixIcon: Container(
+        margin: const EdgeInsets.only(top: 8, right: 8),
+        child: SizedBox(
+          width: 32,
+          height: 32,
+          child: ElevatedButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: candidatecontroller.text));
+            },
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.zero,
+              shape: CircleBorder(),
+              primary: const Color.fromARGB(255, 230, 191, 232),
+            ),
+            child: Icon(Icons.copy, size: 16, color: Colors.black),
+          ),
+        ),
+      ),
     ),
   );
   final txtcandidate = TextFormField(
@@ -184,6 +222,25 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      suffixIcon: Container(
+        margin: const EdgeInsets.only(top: 8, right: 8),
+        child: SizedBox(
+          width: 32,
+          height: 32,
+          child: ElevatedButton(
+            onPressed: () {
+              Clipboard.setData(
+                  ClipboardData(text: candidateUsercontroller.text));
+            },
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.zero,
+              shape: CircleBorder(),
+              primary: const Color.fromARGB(255, 230, 191, 232),
+            ),
+            child: Icon(Icons.copy, size: 16, color: Colors.black),
+          ),
+        ),
+      ),
     ),
   );
 
@@ -237,6 +294,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
     pc.onIceCandidate = (e) {
       if (e.candidate != null) {
+        print(
+            '----------------------------------------------------------------------------------');
         print(json.encode({
           'candidate': e.candidate.toString(),
           'sdpMid': e.sdpMid.toString(),
@@ -250,20 +309,14 @@ class _MyHomePageState extends State<MyHomePage> {
             'sdpMlineIndex': e.sdpMLineIndex,
           });
 
-          Map<String, dynamic> mapa = json.decode(guardar);
+          print(bandera);
+          print(guardar);
+          final bool finalValue = !bandera;
+          bandera = finalValue;
 
-          // Acceder a los valores del mapa
-          String candidate = mapa['candidate'];
-          String sdpMid = mapa['sdpMid'];
-          int sdpMlineIndex = mapa['sdpMlineIndex'];
+          candidateUsercontroller.text = guardar;
 
-          // Imprimir los valores
-          print('Candidate: $candidate');
-          print('sdpMid: $sdpMid');
-          print('sdpMlineIndex: $sdpMlineIndex');
-          if (candidate.contains('network-id 2') && candidate.contains('udp')) {
-            candidateUsercontroller.text = guardar;
-          }
+          // }
         }
       }
     };
@@ -281,50 +334,73 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _createOffer() async {
-    RTCSessionDescription description =
-        await _peerConnection!.createOffer({'offerToReceiveVideo': 1});
-    var session = parse(description.sdp.toString());
-    print(json.encode(session));
+    try {
+      RTCSessionDescription description =
+          await _peerConnection!.createOffer({'offerToReceiveVideo': 1});
+      var session = parse(description.sdp.toString());
+      print(
+          '----------------------------------------------------------------------------------');
+      print(json.encode(session));
 
-    _offer = true;
-    _offercontroller.text = json.encode(session);
-
-    _peerConnection!.setLocalDescription(description);
+      _offer = true;
+      _offercontroller.text = json.encode(session);
+      _peerConnection!.setLocalDescription(description);
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
+    }
   }
 
   void _createAnswer() async {
-    bandera = true;
-    RTCSessionDescription description =
-        await _peerConnection!.createAnswer({'offerToReceiveVideo': 1});
+    try {
+      bandera = true;
+      RTCSessionDescription description =
+          await _peerConnection!.createAnswer({'offerToReceiveVideo': 1});
 
-    var session = parse(description.sdp.toString());
-    print("${json.encode(session)}iuwuwu");
+      var session = parse(description.sdp.toString());
+      print(
+          '----------------------------------------------------------------------------------');
+      print("${json.encode(session)}iuwuwu");
 
-    _peerConnection!
-        .setLocalDescription(description)
-        .then((value) => candidatecontroller.text = json.encode((session)));
+      _peerConnection!
+          .setLocalDescription(description)
+          .then((value) => candidatecontroller.text = json.encode((session)));
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
+    }
   }
 
   void _setRemoteDescription() async {
-    String jsonString = sdpController.text;
-    dynamic session = await jsonDecode(jsonString);
+    try {
+      String jsonString = sdpController.text;
+      dynamic session = await jsonDecode(jsonString);
 
-    String sdp = write(session, null);
+      String sdp = write(session, null);
 
-    RTCSessionDescription description =
-        RTCSessionDescription(sdp, _offer ? 'answer' : 'offer');
-    print("uw${description.toMap()}");
+      RTCSessionDescription description =
+          RTCSessionDescription(sdp, _offer ? 'answer' : 'offer');
+      print("uw${description.toMap()}");
 
-    await _peerConnection!.setRemoteDescription(description);
+      await _peerConnection!.setRemoteDescription(description);
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
+    }
   }
 
   void _addCandidate() async {
-    String jsonString = sdpController.text;
-    dynamic session = await jsonDecode(jsonString);
-    print(session['candidate']);
-    dynamic candidate = RTCIceCandidate(
-        session['candidate'], session['sdpMid'], session['sdpMlineIndex']);
-    await _peerConnection!.addCandidate(candidate);
+    try {
+      String jsonString = sdpController.text;
+      dynamic session = await jsonDecode(jsonString);
+      print(session['candidate']);
+      dynamic candidate = RTCIceCandidate(
+          session['candidate'], session['sdpMid'], session['sdpMlineIndex']);
+      await _peerConnection!.addCandidate(candidate);
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
+    }
   }
 
   @override
@@ -382,144 +458,141 @@ class _MyHomePageState extends State<MyHomePage> {
         body: Container(
           decoration:
               const BoxDecoration(color: Color.fromARGB(187, 204, 172, 218)),
-          child: Column(
-            children: [
-              videoRenderers(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Column(
-                      children: [
-                        ElevatedButton(
-                          onPressed: _createOffer,
-                          style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(50),
-                              ),
-                              padding: const EdgeInsets.all(20.0),
-                              backgroundColor:
-                                  const Color.fromARGB(255, 230, 191, 232)),
-                          child: const Icon(Icons.person,
-                              size: 15, color: Colors.black),
-                        ),
-                        const SizedBox(height: 3.0),
-                        const Text('Offer'),
-                        const SizedBox(height: 8.0),
-                      ],
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                videoRenderers(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Column(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {
+                              _createOffer();
+                            },
+                            style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                                padding: const EdgeInsets.all(20.0),
+                                backgroundColor:
+                                    const Color.fromARGB(255, 230, 191, 232)),
+                            child: const Icon(Icons.person,
+                                size: 15, color: Colors.black),
+                          ),
+                          const SizedBox(height: 3.0),
+                          const Text('Offer'),
+                          const SizedBox(height: 8.0),
+                        ],
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      children: [
-                        ElevatedButton(
-                          onPressed: _createAnswer,
-                          style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(50),
-                              ),
-                              padding: const EdgeInsets.all(20.0),
-                              backgroundColor:
-                                  Color.fromARGB(255, 230, 191, 232)),
-                          child: const Icon(Icons.people,
-                              size: 15, color: Colors.black),
-                        ),
-                        const SizedBox(height: 3.0),
-                        const Text('Answer'),
-                        const SizedBox(height: 8.0),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        children: [
+                          ElevatedButton(
+                            onPressed: _createAnswer,
+                            style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                                padding: const EdgeInsets.all(20.0),
+                                backgroundColor:
+                                    Color.fromARGB(255, 230, 191, 232)),
+                            child: const Icon(Icons.people,
+                                size: 15, color: Colors.black),
+                          ),
+                          const SizedBox(height: 3.0),
+                          const Text('Answer'),
+                          const SizedBox(height: 8.0),
+                        ],
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      children: [
-                        ElevatedButton(
-                          onPressed: _setRemoteDescription,
-                          style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(50),
-                              ),
-                              padding: const EdgeInsets.all(20.0),
-                              backgroundColor:
-                                  Color.fromARGB(255, 230, 191, 232)),
-                          child: const Icon(Icons.add_to_home_screen_sharp,
-                              size: 15, color: Colors.black),
-                        ),
-                        const SizedBox(height: 3.0),
-                        const Text('set remote'),
-                        const SizedBox(height: 8.0),
-                        const SizedBox(
-                          height: 3,
-                        ),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        children: [
+                          ElevatedButton(
+                            onPressed: _setRemoteDescription,
+                            style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                                padding: const EdgeInsets.all(20.0),
+                                backgroundColor:
+                                    Color.fromARGB(255, 230, 191, 232)),
+                            child: const Icon(Icons.add_to_home_screen_sharp,
+                                size: 15, color: Colors.black),
+                          ),
+                          const SizedBox(height: 3.0),
+                          const Text('set remote'),
+                          const SizedBox(height: 8.0),
+                          const SizedBox(
+                            height: 3,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      children: [
-                        ElevatedButton(
-                          onPressed: _addCandidate,
-                          style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(50),
-                              ),
-                              padding: const EdgeInsets.all(20.0),
-                              backgroundColor:
-                                  Color.fromARGB(255, 230, 191, 232)),
-                          child: const Icon(Icons.person_add_alt_rounded,
-                              size: 15, color: Colors.black),
-                        ),
-                        const SizedBox(height: 3.0),
-                        const Text('add candidate'),
-                        const SizedBox(height: 8.0),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        children: [
+                          ElevatedButton(
+                            onPressed: _addCandidate,
+                            style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                                padding: const EdgeInsets.all(20.0),
+                                backgroundColor:
+                                    Color.fromARGB(255, 230, 191, 232)),
+                            child: const Icon(Icons.person_add_alt_rounded,
+                                size: 15, color: Colors.black),
+                          ),
+                          const SizedBox(height: 3.0),
+                          const Text('add candidate'),
+                          const SizedBox(height: 8.0),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("offer"),
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.3,
-                          child: txtoffer,
-                        ),
-                      ],
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        children: [
+                          Text("candidato"),
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * 0.8,
+                            child: txtCandidateremote,
+                          ),
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * 0.8,
+                            child: txtcandidate,
+                          ),
+                          Text("offer"),
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * 0.8,
+                            child: txtoffer,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      children: [
-                        Text("candidato"),
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.3,
-                          child: txtCandidateremote,
-                        ),
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.3,
-                          child: txtcandidate,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(
-                width: MediaQuery.of(context).size.width * 0.3,
-                child: txtremote,
-              ),
-            ],
+                  ],
+                ),
+                Text("Conexion"),
+                SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  child: txtremote,
+                ),
+              ],
+            ),
           ),
         ));
   }
